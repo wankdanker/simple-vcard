@@ -1,0 +1,27 @@
+{
+  "name": "simple-vcard",
+  "version": "1.0.0",
+  "description": "A module to transform simple javascript objects into vCards and vLists",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "tape": "^4.8.0"
+  },
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wankdanker/simple-vcard.git"
+  },
+  "keywords": [
+    "vcard",
+    "vlist"
+  ],
+  "author": "Dan VerWeire",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wankdanker/simple-vcard/issues"
+  },
+  "homepage": "https://github.com/wankdanker/simple-vcard#readme"
+}
