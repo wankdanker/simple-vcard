@@ -1,6 +1,6 @@
 {
   "name": "simple-vcard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A module to transform simple javascript objects into vCards and vLists",
   "main": "index.js",
   "dependencies": {},
