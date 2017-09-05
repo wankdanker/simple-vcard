@@ -1,5 +1,7 @@
 var vCard = module.exports = {};
 
+vCard.FOLD_AT_LENGTH = 75;
+
 vCard.toVCard = function (obj) {
   var tmp = [];
 
@@ -10,11 +12,16 @@ vCard.toVCard = function (obj) {
 
   var keys = Object.keys(obj);
 
-  vCard.VCARD_THINGS.map(function (thing) {
+  vCard.VCARD_THINGS.forEach(function (thing) {
     if (thing.arrayKey && obj[thing.arrayKey]) {
-      obj[thing.arrayKey].map(function (item) {
-        tmp.push(vCard.line(thing, item));
-      });
+      if (thing.arrayizeExtras) {
+        tmp.push(vCard.line(thing, obj, obj[thing.arrayKey]));
+      }
+      else {
+        obj[thing.arrayKey].forEach(function (item) {
+          tmp.push(vCard.line(thing, item));
+        });
+      }
 
       return;
     }
@@ -27,7 +34,7 @@ vCard.toVCard = function (obj) {
 
   tmp.push(vCard.pair('END', 'VCARD'));
 
-  return tmp.join('\n');
+  return tmp.join('\r\n');
 }
 
 vCard.toVList = function (obj) {
@@ -38,9 +45,9 @@ vCard.toVList = function (obj) {
 
   var keys = Object.keys(obj);
 
-  vCard.VLIST_THINGS.map(function (thing) {
+  vCard.VLIST_THINGS.forEach(function (thing) {
     if (thing.arrayKey && obj[thing.arrayKey]) {
-      obj[thing.arrayKey].map(function (item) {
+      obj[thing.arrayKey].forEach(function (item) {
         tmp.push(vCard.line(thing, item));
       });
 
@@ -59,13 +66,17 @@ vCard.toVList = function (obj) {
 
   tmp.push(vCard.pair('END', 'VLIST'));
 
-  return tmp.join('\n');
+  return tmp.join('\r\n');
 }
 
-vCard.line = function (thing, obj) {
+vCard.line = function (thing, obj, extras) {
   var values = thing.fields.map(function (field) {
     return obj[field] || "";
   });
+
+  if (extras && Array.isArray(extras)) {
+    values = values.concat(extras);
+  }
 
   var name = thing.name;
 
@@ -101,7 +112,106 @@ vCard.pair = function (a, b) {
     tmp.push(b);
   }
 
-  return tmp.join(':');
+  tmp = tmp.join(':');
+
+  if (tmp.length <= 75) {
+    return tmp;
+  }
+
+  return vCard.fold(tmp);
+}
+
+vCard.fold = function (str) {
+  var tmp = '';
+  var offset = 0;
+  var chunkSize = vCard.FOLD_AT_LENGTH
+
+  for (var x = 0; x < str.length; ) {
+    if (x > 0) {
+      tmp += '\r\n ';
+    }
+
+    tmp += str.substring(x, x + chunkSize);
+
+    //chunkSize = vCard.FOLD_AT_LENGTH - 1;
+    x += chunkSize
+  }
+
+  return tmp;
+};
+
+vCard.unfold = function (str) {
+  return str.replace(/\r?\n[\s]+/gm, '');
+}
+
+vCard.fromVCard = function (str) {
+  var card = {};
+
+  //unfold
+  str = vCard.unfold(str);
+
+  //split
+  var lines = str.split(/\r?\n/g);
+
+  lines.forEach(function (line) {
+    var tokens = line.split(/:/);
+    var params = tokens.shift().split(/;/); //the 0th element are the params
+    var name = params.shift(); //the 0th element is the name
+    var value = tokens.join(':'); //rejoin the rest of the tokens with :
+    var object;
+
+    var thing = vCard.VCARD_THINGS_LOOKUP[name];
+
+    if (thing) {
+      var values = value.split(/;/gi);
+
+      if (thing.arrayKey && thing.arrayizeExtras) {
+        if (values.length > 1) {
+          card[thing.arrayKey] = card[thing.arrayKey] || [];
+
+          for (; values.length > 1;) {
+            card[thing.arrayKey].push(values.pop());
+          }
+
+          card[thing.arrayKey].reverse()
+        }
+
+        object = card;
+      }
+      else if (thing.arrayKey) {
+        card[thing.arrayKey] = card[thing.arrayKey] || [];
+        object = {};
+        card[thing.arrayKey].push(object);
+      }
+      else {
+        object = card;
+      }
+
+      values.forEach(function (val, ix) {
+        if (val) {
+          object[thing.fields[ix]] = val;
+        }
+      });
+
+      if (params.length && thing.paramsValueLookup) {
+        params.forEach(function (param) {
+          var tokens = param.split(/=/);
+          var name = tokens[0];
+          var value = tokens[1];
+
+          object[thing.paramsValueLookup[name]] = value;
+        });
+      }
+
+      return
+    }
+    else {
+      //we don't have a registered thing for this, do something generic
+      //card[name] = value;
+    }
+  });
+
+  return card;
 }
 
 vCard.VCARD_THINGS = [
@@ -114,15 +224,35 @@ vCard.VCARD_THINGS = [
   , { name : "X-AIM", fields : ["screenName"] }
   , { name : "BDAY", fields : ["birthday"] }
   , { name : "ADR", arrayKey : "addresses", fields : ["po", "address2", "address1", "city", "region", "postalCode", "country"], params : { type : "TYPE" } }
-  , { name : "ORG", fields : ["company"] }
+  , { name : "ORG", arrayKey : "organizations", arrayizeExtras : true, fields : ["company"], }
   , { name : "TEL", arrayKey : "phones", fields : ["phone"], params : { type : "TYPE" } }
-  , { name : "EMAIL", arrayKey : "emails", fields : ["email"] }
-  , { name : "URL", arrayKey : "urls", fields : ["url"] }
+  , { name : "EMAIL", arrayKey : "emails", fields : ["email"], params : { type : "TYPE" } }
+  , { name : "URL", arrayKey : "urls", fields : ["url"], params : { type : "TYPE" } }
   , { name : "NOTE", fields : ["note"] }
-]
+  , { name : "CUSTOM1", fields : ["custom1"] }
+  , { name : "CUSTOM2", fields : ["custom2"] }
+  , { name : "CUSTOM3", fields : ["custom3"] }
+  , { name : "CUSTOM4", fields : ["custom4"] }
+  , { name : "CUSTOM5", fields : ["custom5"] }
+  , { name : "PHOTO", fields : ["photo"], params : { value : "VALUE" } }
+];
+
+vCard.VCARD_THINGS_LOOKUP = {};
+
+vCard.VCARD_THINGS.forEach(function (thing) {
+  vCard.VCARD_THINGS_LOOKUP[thing.name] = thing;
+
+  if (thing.params) {
+    thing.paramsValueLookup = {};
+    Object.keys(thing.params).forEach(function (param) {
+      thing.paramsValueLookup[thing.params[param]] = param;
+    });
+  }
+});
 
 vCard.VLIST_THINGS = [
   { name : "FN", fields : ["displayName"] }
+  , { name : "UID", fields : ['id'] }
   , { name : "NICKNAME", fields : ["nickName"] }
   , { name : "DESCRIPTION", fields : ["description"] }
   , { name : "CARD", arrayKey : "cards", fields : ["id"], params : { email : "EMAIL", displayName : 'FN' } }
