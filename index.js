@@ -292,6 +292,10 @@ vCard.VCARD_THINGS = [
   , { name : "CUSTOM4", fields : ["custom4"] }
   , { name : "CUSTOM5", fields : ["custom5"] }
   , { name : "PHOTO", arrayKey : "photos", fields : ["photo"], params : { type : 'TYPE', value : "VALUE" } }
+  , { name : "REV", fields : ["revision"] }
+  , { name : "MAILER", fields : ["mailer"] }
+  , { name : "LOGO", fields : ["logo"] }
+  , { name : "CATEGORIES", fields : ["categories"] }
 ];
 
 vCard.VCARD_THINGS_LOOKUP = {};
