@@ -210,7 +210,7 @@ END:VCARD`;
 
   result = vCard.toVCard(result);
   result = result.replace(/\r/g, '');
-  
+
   t.equal(result, vcard);
 
   t.end();
