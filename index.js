@@ -184,7 +184,7 @@ vCard.fold = function (str, foldAtLength) {
 };
 
 vCard.unfold = function (str) {
-  return str.replace(/\r?\n[\s]+/gm, '');
+  return str.replace(/\r?\n[\ \t]+/gm, '');
 }
 
 vCard.fromVCard = function (str) {
