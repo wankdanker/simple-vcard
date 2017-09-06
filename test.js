@@ -32,6 +32,7 @@ var jCards = [{
 
 var toVCardExpect = `BEGIN:VCARD
 VERSION:3.0
+PRODID:${vCard.PRODUCT_ID}
 CLASS:PUBLIC
 PROFILE:VCARD
 UID:dfcc7456-8f56-11e7-bc32-d76e3ad96585
@@ -75,6 +76,7 @@ test('vCard.toVList()', function (t) {
 
 var fromVCard = `BEGIN:VCARD
 VERSION:3.0
+PRODID:${vCard.PRODUCT_ID}
 CLASS:PUBLIC
 PROFILE:VCARD
 UID:7FB3-59AEC480-D-78B1E48.vcf
@@ -161,7 +163,6 @@ test('vCard.fromVCard() -> vCard.toVCard() -> vCard.fromVCard()', function (t) {
   t.end();
 });
 
-
 test('vCard.fold()', function (t) {
   var foldString = 'PHOTO;VALUE=uri:https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAKmAAAAJGVjMmZhOGE4LTYyMGItNGIxMC05NjU5LWQ0ZGJiY2ZkZWQ5MQ.jpg'
   var foldExpect = `PHOTO;VALUE=uri:https://m
@@ -175,6 +176,42 @@ test('vCard.fold()', function (t) {
   var result = vCard.fold(foldString, 25);
   result = result.replace(/\r/g, '');
   t.equal(result, foldExpect);
+
+  t.end();
+});
+
+test('an x-thing', function (t) {
+  var vcard = `BEGIN:VCARD
+VERSION:3.0
+PRODID:${vCard.PRODUCT_ID}
+CLASS:PUBLIC
+PROFILE:VCARD
+N:Lastname;Firstname;;
+FN:Display Name
+X-CUSTOM-THING;TYPE=test;OTHER=mop:what;will;happen;next
+END:VCARD`;
+
+  var expect = {
+    lastName: 'Lastname',
+    firstName: 'Firstname',
+    displayName: 'Display Name',
+    'X-CUSTOM-THING': {
+      params: {
+        TYPE: 'test',
+        OTHER: 'mop'
+      },
+      value: 'what;will;happen;next'
+    }
+  }
+
+  var result = vCard.fromVCard(vcard);
+
+  t.deepEqual(result, expect);
+
+  result = vCard.toVCard(result);
+  result = result.replace(/\r/g, '');
+  
+  t.equal(result, vcard);
 
   t.end();
 });

@@ -1,15 +1,18 @@
+var pkg = require('./package.json');
 var vCard = module.exports = {};
 
 vCard.FOLD_AT_LENGTH = 75;
+vCard.PRODUCT_ID = '-//simple-vcard//Version ' + pkg.version + '//EN';
 
 vCard.toVCard = function (obj) {
   var tmp = [];
 
   tmp.push(vCard.pair('BEGIN', 'VCARD'));
   tmp.push(vCard.pair('VERSION', '3.0'));
+  tmp.push(vCard.pair('PRODID', vCard.PRODUCT_ID));
   tmp.push(vCard.pair('CLASS', 'PUBLIC'));
   tmp.push(vCard.pair('PROFILE', 'VCARD'));
-  
+
   var keys = Object.keys(obj);
 
   vCard.VCARD_THINGS.forEach(function (thing) {
@@ -32,9 +35,37 @@ vCard.toVCard = function (obj) {
     tmp.push(vCard.line(thing, obj));
   });
 
+  //now process any of the custom X- fields
+  Object.keys(obj).forEach(function (key) {
+    if (!/^x-|^X-/.test(key)) {
+      return;
+    }
+
+    var custom = obj[key];
+    var value = custom.value;
+    var params = vCard.joinParams(custom.params)
+
+    if (params) {
+      tmp.push(vCard.pair([key, params].join(';'), value))
+    }
+    else {
+      tmp.push(vCard.pair(key, value));
+    }
+  });
+
   tmp.push(vCard.pair('END', 'VCARD'));
 
   return tmp.join('\r\n');
+}
+
+vCard.joinParams = function (params) {
+  var result = [];
+
+  Object.keys(params).forEach(function (param) {
+    result.push(param + '=' + params[param]);
+  });
+
+  return result.join(';');
 }
 
 vCard.toVList = function (obj) {
@@ -210,9 +241,30 @@ vCard.fromVCard = function (str) {
 
       return
     }
+    else if (/^x-|^X-/.test(name)) {
+      //this is an X- field, need to do a special copy
+      var tmp = {};
+
+      //this is duplicated from above pretty much
+      params.forEach(function (param) {
+        var tokens = param.split(/=/);
+        var name = tokens[0];
+        var value = tokens[1];
+
+        tmp[name] = value;
+      });
+
+      object = {
+        params : tmp
+        , value : value
+      };
+
+      card[name] = object;
+    }
     else {
       //we don't have a registered thing for this, do something generic
       //card[name] = value;
+
     }
   });
 
@@ -239,7 +291,7 @@ vCard.VCARD_THINGS = [
   , { name : "CUSTOM3", fields : ["custom3"] }
   , { name : "CUSTOM4", fields : ["custom4"] }
   , { name : "CUSTOM5", fields : ["custom5"] }
-  , { name : "PHOTO", arrayKey : "photos", fields : ["photo"], params : { value : "VALUE" } }
+  , { name : "PHOTO", arrayKey : "photos", fields : ["photo"], params : { type : 'TYPE', value : "VALUE" } }
 ];
 
 vCard.VCARD_THINGS_LOOKUP = {};
