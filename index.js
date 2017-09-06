@@ -42,6 +42,13 @@ vCard.toVCard = function (obj) {
     }
 
     var custom = obj[key];
+
+    //if it's just a value and not a parsed custom object, then just set the
+    //value and move on to the next key
+    if (typeof custom !== 'object') {
+      return tmp.push(vCard.pair(key, custom));
+    }
+
     var value = custom.value;
     var params = vCard.joinParams(custom.params)
 
