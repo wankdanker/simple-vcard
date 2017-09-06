@@ -165,7 +165,7 @@ vCard.fold = function (str, foldAtLength) {
   var chunkSize = foldAtLength || vCard.FOLD_AT_LENGTH;
 
   for (var x = 0; x < str.length; ) {
-    if (x > 0) {
+    if (x > 0 && str.length - x >= 0) {
       tmp += '\r\n ';
     }
 
