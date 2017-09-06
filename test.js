@@ -160,3 +160,21 @@ test('vCard.fromVCard() -> vCard.toVCard() -> vCard.fromVCard()', function (t) {
 
   t.end();
 });
+
+
+test('vCard.fold()', function (t) {
+  var foldString = 'PHOTO;VALUE=uri:https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAKmAAAAJGVjMmZhOGE4LTYyMGItNGIxMC05NjU5LWQ0ZGJiY2ZkZWQ5MQ.jpg'
+  var foldExpect = `PHOTO;VALUE=uri:https://m
+ edia.licdn.com/mpr/mpr/s
+ hrinknp_400_400/AAEAAQAA
+ AAAAAAKmAAAAJGVjMmZhOGE4
+ LTYyMGItNGIxMC05NjU5LWQ0
+ ZGJiY2ZkZWQ5MQ.jpg`;
+
+
+  var result = vCard.fold(foldString, 25);
+  result = result.replace(/\r/g, '');
+  t.equal(result, foldExpect);
+
+  t.end();
+});

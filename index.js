@@ -9,7 +9,7 @@ vCard.toVCard = function (obj) {
   tmp.push(vCard.pair('VERSION', '3.0'));
   tmp.push(vCard.pair('CLASS', 'PUBLIC'));
   tmp.push(vCard.pair('PROFILE', 'VCARD'));
-
+  
   var keys = Object.keys(obj);
 
   vCard.VCARD_THINGS.forEach(function (thing) {
@@ -121,20 +121,25 @@ vCard.pair = function (a, b) {
   return vCard.fold(tmp);
 }
 
-vCard.fold = function (str) {
+vCard.fold = function (str, foldAtLength) {
   var tmp = '';
   var offset = 0;
-  var chunkSize = vCard.FOLD_AT_LENGTH
+  var chunkSize = foldAtLength || vCard.FOLD_AT_LENGTH;
 
   for (var x = 0; x < str.length; ) {
     if (x > 0) {
       tmp += '\r\n ';
     }
 
-    tmp += str.substring(x, x + chunkSize);
+    tmp += str.substr(x, chunkSize);
 
-    //chunkSize = vCard.FOLD_AT_LENGTH - 1;
-    x += chunkSize
+    if (x === 0) {
+      x += chunkSize;
+      chunkSize -= 1;
+    }
+    else {
+      x += chunkSize;
+    }
   }
 
   return tmp;
@@ -234,7 +239,7 @@ vCard.VCARD_THINGS = [
   , { name : "CUSTOM3", fields : ["custom3"] }
   , { name : "CUSTOM4", fields : ["custom4"] }
   , { name : "CUSTOM5", fields : ["custom5"] }
-  , { name : "PHOTO", fields : ["photo"], params : { value : "VALUE" } }
+  , { name : "PHOTO", arrayKey : "photos", fields : ["photo"], params : { value : "VALUE" } }
 ];
 
 vCard.VCARD_THINGS_LOOKUP = {};
